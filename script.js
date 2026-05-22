@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------------------------
     let isMuted = false;
     let currentVolume = 0.4; // 各スライダー初期値40%に対応する 0.0〜1.0
+    let introTimeoutIds = [];
 
     // ----------------------------------------------------------------------
     // 4. 初期化処理
@@ -167,8 +168,112 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------------------------
     // 6. 入場演出シーケンス
     // ----------------------------------------------------------------------
+    function clearIntroTimeouts() {
+        introTimeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+        introTimeoutIds = [];
+    }
+
+    function queueIntroStep(callback, delay) {
+        const timeoutId = window.setTimeout(callback, delay);
+        introTimeoutIds.push(timeoutId);
+    }
+
+    function setIntroModeState(isLiteMode) {
+        if (!introOverlay) {
+            return;
+        }
+
+        introOverlay.classList.toggle('is-lite-mode', isLiteMode);
+        introOverlay.classList.toggle('is-full-mode', !isLiteMode);
+    }
+
+    function resetIntroState() {
+        clearIntroTimeouts();
+
+        if (introTitle) {
+            introTitle.classList.remove('show');
+        }
+        if (introCopy) {
+            introCopy.classList.remove('show');
+        }
+        if (whiteoutScreen) {
+            whiteoutScreen.classList.remove('active');
+            whiteoutScreen.style.opacity = '';
+        }
+        if (introOverlay) {
+            introOverlay.classList.remove('is-lite-mode', 'is-full-mode', 'is-revealing');
+        }
+        if (mainContent) {
+            mainContent.classList.remove('fade-in');
+            mainContent.style.display = '';
+            mainContent.style.visibility = '';
+            mainContent.style.pointerEvents = '';
+            mainContent.style.opacity = '';
+        }
+        if (fixedAudioWidget) {
+            fixedAudioWidget.style.display = '';
+            fixedAudioWidget.style.visibility = '';
+            fixedAudioWidget.style.opacity = '';
+        }
+    }
+
+    function revealMainContent() {
+        console.log("revealMainContent executing.");
+
+        document.body.classList.add('is-ready');
+
+        if (mainContent) {
+            mainContent.classList.remove('is-hidden');
+            mainContent.setAttribute('aria-hidden', 'false');
+            mainContent.style.display = 'block';
+            mainContent.style.visibility = 'visible';
+            mainContent.style.pointerEvents = 'auto';
+
+            // トランジションを確実に有効化するため、表示状態を確定してから fade-in を付与する
+            void mainContent.offsetWidth;
+            mainContent.classList.add('fade-in');
+        }
+
+        if (fixedAudioWidget) {
+            fixedAudioWidget.classList.remove('is-hidden');
+            fixedAudioWidget.setAttribute('aria-hidden', 'false');
+            fixedAudioWidget.style.display = 'flex';
+            fixedAudioWidget.style.visibility = 'visible';
+            fixedAudioWidget.style.opacity = '1';
+        }
+
+        if (introOverlay) {
+            introOverlay.classList.add('is-revealing');
+        }
+    }
+
+    function finishIntro() {
+        console.log("finishIntro executing.");
+
+        if (whiteoutScreen) {
+            whiteoutScreen.classList.remove('active');
+        }
+
+        if (audioOverlay) {
+            audioOverlay.classList.add('is-hidden');
+            audioOverlay.setAttribute('aria-hidden', 'true');
+            audioOverlay.style.opacity = '0';
+            audioOverlay.style.pointerEvents = 'none';
+        }
+
+        if (introOverlay) {
+            introOverlay.classList.add('is-hidden');
+            introOverlay.setAttribute('aria-hidden', 'true');
+            introOverlay.style.opacity = '0';
+            introOverlay.style.pointerEvents = 'none';
+            introOverlay.classList.remove('is-lite-mode', 'is-full-mode', 'is-revealing');
+        }
+    }
+
     function startIntro(withAudio) {
         console.log("startIntro called. withAudio:", withAudio);
+
+        resetIntroState();
 
         // 音声の安全な再生（読み込めない場合やブロックされた場合も必ず次に進める）
         if (summerAudio) {
@@ -194,20 +299,12 @@ document.addEventListener('DOMContentLoaded', () => {
             audioOverlay.style.pointerEvents = 'none';
         }
         
-        setTimeout(() => {
+        queueIntroStep(() => {
             if (audioOverlay) {
                 audioOverlay.classList.add('is-hidden');
                 audioOverlay.setAttribute('aria-hidden', 'true');
             }
-            
-            // 【超重要】OSのアニメーション軽減（prefers-reduced-motion）が有効なPC環境の場合、
-            // 演出用オーバーレイを一切挟まず即座にメインに遷移させる
-            if (prefersReducedMotion) {
-                console.log("Reduced motion is active. Skipping intro overlay completely.");
-                showMainContent();
-                return;
-            }
-            
+
             // 入室演出オーバーレイを表示し、最前面に
             if (introOverlay) {
                 introOverlay.classList.remove('is-hidden');
@@ -215,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 introOverlay.style.opacity = '1';
                 introOverlay.style.pointerEvents = 'auto';
             }
-            
+
             console.log("Audio overlay hidden. Starting timeline...");
             runIntroTimeline();
         }, CONFIG.fadeDuration);
@@ -225,96 +322,60 @@ document.addEventListener('DOMContentLoaded', () => {
     function runIntroTimeline() {
         console.log("runIntroTimeline standard sequence started.");
 
-        if (prefersReducedMotion) {
-            console.log("Reduced motion preferred. Skipping animation.");
-            showMainContent();
-            return;
+        clearIntroTimeouts();
+
+        const isLiteMode = prefersReducedMotion;
+        const timeline = isLiteMode
+            ? {
+                titleDelay: 140,
+                copyDelay: 320,
+                whiteoutDelay: 620,
+                mainViewDelay: 780,
+                finishDelay: 1180,
+            }
+            : {
+                titleDelay: CONFIG.introTitleDelay,
+                copyDelay: CONFIG.introCopyDelay,
+                whiteoutDelay: CONFIG.whiteoutDelay,
+                mainViewDelay: CONFIG.mainViewDelay,
+                finishDelay: CONFIG.finishDelay,
+            };
+
+        setIntroModeState(isLiteMode);
+
+        if (isLiteMode) {
+            console.log("Reduced motion preferred. Running lite intro timeline.");
         }
 
         // 1. タイトル表示
-        setTimeout(() => {
+        queueIntroStep(() => {
             console.log("Step 1: Show intro title");
             if (introTitle) introTitle.classList.add('show');
-        }, CONFIG.introTitleDelay);
+        }, timeline.titleDelay);
 
         // 2. キャッチコピー表示
-        setTimeout(() => {
+        queueIntroStep(() => {
             console.log("Step 2: Show intro copy");
             if (introCopy) introCopy.classList.add('show');
-        }, CONFIG.introCopyDelay);
+        }, timeline.copyDelay);
 
         // 3. 画面が白い光でホワイトアウトする
-        setTimeout(() => {
+        queueIntroStep(() => {
             console.log("Step 3: Whiteout screen start");
             if (whiteoutScreen) whiteoutScreen.classList.add('active');
-        }, CONFIG.whiteoutDelay);
+        }, timeline.whiteoutDelay);
 
         // 4. メインコンテンツと音声ウィジェットを表示 & 演出画面の裏片付け
-        setTimeout(() => {
+        queueIntroStep(() => {
             console.log("Step 4: Display main content (under background)");
-            showMainContent();
-        }, CONFIG.mainViewDelay);
+            revealMainContent();
+        }, timeline.mainViewDelay);
 
         // 5. ホワイトアウト解除（フィニッシュ）
-        setTimeout(() => {
+        queueIntroStep(() => {
             console.log("Step 5: Whiteout fade out. Finish intro.");
-            if (whiteoutScreen) whiteoutScreen.classList.remove('active');
-            
-            // 不要になった演出用オーバーレイを完全に隠す
-            if (introOverlay) {
-                introOverlay.classList.add('is-hidden');
-                introOverlay.setAttribute('aria-hidden', 'true');
-            }
-        }, CONFIG.finishDelay);
-    }
-
-    // メインコンテンツを表示する共通処理
-    function showMainContent() {
-        console.log("showMainContent custom function executing.");
-        // スクロール制限を解除して、通常表示を可能にする
-        document.body.classList.add('is-ready');
-
-        // 演出レイヤーが残るとPCブラウザでは前面を塞いで見えることがあるため、
-        // メイン表示時点で関連オーバーレイを強制的に片付ける
-        if (audioOverlay) {
-            audioOverlay.classList.add('is-hidden');
-            audioOverlay.setAttribute('aria-hidden', 'true');
-            audioOverlay.style.opacity = '0';
-            audioOverlay.style.pointerEvents = 'none';
-        }
-        if (introOverlay) {
-            introOverlay.classList.add('is-hidden');
-            introOverlay.setAttribute('aria-hidden', 'true');
-            introOverlay.style.opacity = '0';
-            introOverlay.style.pointerEvents = 'none';
-        }
-        if (whiteoutScreen) {
-            whiteoutScreen.classList.remove('active');
-            whiteoutScreen.style.opacity = '0';
-        }
-
-        // 演出画面から通常画面への移行
-        if (mainContent) {
-            mainContent.classList.remove('is-hidden');
-            mainContent.setAttribute('aria-hidden', 'false');
-
-            // reduced motion やデスクトップ環境でも確実に見えるよう、
-            // class 付与に加えて表示に必要な状態を同期的に確定させる
-            mainContent.style.display = 'block';
-            mainContent.style.visibility = 'visible';
-            mainContent.style.pointerEvents = 'auto';
-            mainContent.style.opacity = '1';
-            mainContent.classList.add('fade-in');
-        }
-
-        // 固定表示の音声ウィジェットを表示
-        if (fixedAudioWidget) {
-            fixedAudioWidget.classList.remove('is-hidden');
-            fixedAudioWidget.setAttribute('aria-hidden', 'false');
-            fixedAudioWidget.style.display = 'flex';
-            fixedAudioWidget.style.visibility = 'visible';
-            fixedAudioWidget.style.opacity = '1';
-        }
+            finishIntro();
+        }, timeline.finishDelay);
     }
 
     // 音声選択ボタンイベント
