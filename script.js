@@ -274,22 +274,46 @@ document.addEventListener('DOMContentLoaded', () => {
         // スクロール制限を解除して、通常表示を可能にする
         document.body.classList.add('is-ready');
 
+        // 演出レイヤーが残るとPCブラウザでは前面を塞いで見えることがあるため、
+        // メイン表示時点で関連オーバーレイを強制的に片付ける
+        if (audioOverlay) {
+            audioOverlay.classList.add('is-hidden');
+            audioOverlay.setAttribute('aria-hidden', 'true');
+            audioOverlay.style.opacity = '0';
+            audioOverlay.style.pointerEvents = 'none';
+        }
+        if (introOverlay) {
+            introOverlay.classList.add('is-hidden');
+            introOverlay.setAttribute('aria-hidden', 'true');
+            introOverlay.style.opacity = '0';
+            introOverlay.style.pointerEvents = 'none';
+        }
+        if (whiteoutScreen) {
+            whiteoutScreen.classList.remove('active');
+            whiteoutScreen.style.opacity = '0';
+        }
+
         // 演出画面から通常画面への移行
         if (mainContent) {
             mainContent.classList.remove('is-hidden');
             mainContent.setAttribute('aria-hidden', 'false');
-            
-            // 安全対策：一部のスマホ（省電力モード時等）で実行がスキップされる可能性がある requestAnimationFrame を
-            // 互換性の極めて高い通常の setTimeout に置き換えて、確実にフェードインを起動させます
-            setTimeout(() => {
-                mainContent.classList.add('fade-in');
-            }, 50);
+
+            // reduced motion やデスクトップ環境でも確実に見えるよう、
+            // class 付与に加えて表示に必要な状態を同期的に確定させる
+            mainContent.style.display = 'block';
+            mainContent.style.visibility = 'visible';
+            mainContent.style.pointerEvents = 'auto';
+            mainContent.style.opacity = '1';
+            mainContent.classList.add('fade-in');
         }
 
         // 固定表示の音声ウィジェットを表示
         if (fixedAudioWidget) {
             fixedAudioWidget.classList.remove('is-hidden');
             fixedAudioWidget.setAttribute('aria-hidden', 'false');
+            fixedAudioWidget.style.display = 'flex';
+            fixedAudioWidget.style.visibility = 'visible';
+            fixedAudioWidget.style.opacity = '1';
         }
     }
 
