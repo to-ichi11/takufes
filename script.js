@@ -272,10 +272,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mainContent) {
             mainContent.classList.remove('is-hidden');
             mainContent.setAttribute('aria-hidden', 'false');
-            // 少し遅らせてopacityフェードインクラスをあてる（トランジション有効化のため）
-            requestAnimationFrame(() => {
+            
+            // 安全対策：一部のスマホ（省電力モード時等）で実行がスキップされる可能性がある requestAnimationFrame を
+            // 互換性の極めて高い通常の setTimeout に置き換えて、確実にフェードインを起動させます
+            setTimeout(() => {
                 mainContent.classList.add('fade-in');
-            });
+            }, 50);
         }
 
         // 固定表示の音声ウィジェットを表示
