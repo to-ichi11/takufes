@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>卓フェス2026 ～サマーシーズン～ 特設サイト</title>
+    <!-- メタ情報 -->
+    <meta name="description" content="TRPGオンライン交流イベント「卓フェス2026 ～サマーシーズン～」の特設サイトです。ルールを確認してDiscordサーバーへ参加しよう！">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- 音声選択画面（初期表示オーバーレイ） -->
+    <div id="audio-overlay" class="overlay">
+        <div class="overlay-content">
+            <h1 class="overlay-title">卓フェス2026<br><span class="subtitle">～サマーシーズン～</span></h1>
+            <p class="overlay-question">夏の音（環境音）と一緒に入場しますか？</p>
+            
+            <div class="audio-controls-group">
+                <div class="volume-slider-container">
+                    <label id="slider-label" for="volume-slider">音量調節</label>
+                    <input type="range" id="volume-slider" min="0" max="100" value="40" aria-labelledby="slider-label">
+                    <span id="volume-value">40%</span>
+                </div>
+            </div>
+
+            <div class="overlay-buttons">
+                <button id="btn-audio-on" class="btn btn-primary" aria-label="音ありで入場する">音ありで入場</button>
+                <button id="btn-audio-off" class="btn btn-secondary" aria-label="無音で入場する">無音で入場</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 入場演出用オーバーレイ -->
+    <div id="intro-overlay" class="overlay is-hidden" aria-hidden="true">
+        <!-- 動画背景/CSS波背景の切り替え可能エリア -->
+        <div class="wave-bg-container">
+            <!-- 後から <video src="assets/wave.mp4" autoplay loop muted playsinline></video> に差し替え可能 -->
+            <div class="css-wave-bg">
+                <div class="wave-layer wave1"></div>
+                <div class="wave-layer wave2"></div>
+                <div class="wave-layer wave3"></div>
+            </div>
+        </div>
+        
+        <!-- ホワイトアウト用レイヤー -->
+        <div id="whiteout-screen"></div>
+
+        <!-- 演出中のテキスト表示 -->
+        <div class="intro-text-container">
+            <h2 id="intro-title" class="intro-title">卓フェス2026<br><span class="subtitle">～サマーシーズン～</span></h2>
+            <p id="intro-copy" class="intro-copy">この夏、TRPGを遊びつくそう！</p>
+        </div>
+    </div>
+
+    <!-- 音声プレーヤー (音声ファイルは assets/summer.mp3) -->
+    <audio id="summer-audio" loop preload="auto">
+        <source src="assets/summer.mp3" type="audio/mpeg">
+        お使いのブラウザは音声再生に対応していません。
+    </audio>
+
+    <!-- 固定表示コントロール（音声切り替え・音量） -->
+    <div id="fixed-audio-widget" class="audio-widget is-hidden" aria-label="音声コントロール">
+        <button id="btn-mute-toggle" class="btn-circle" aria-label="消音にする" title="音声をミュート/解除">
+            <!-- スピーカーアイコン (デフォルトは音あり) -->
+            <svg id="icon-sound" class="icon" viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02M3 9v6h4l5 5V4L7 9H3z"/>
+            </svg>
+            <svg id="icon-mute" class="icon is-hidden" viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.21.05-.42.05-.63m2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71M4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+            </svg>
+        </button>
+        <div class="widget-volume-popover">
+            <input type="range" id="widget-volume-slider" min="0" max="100" value="40" aria-label="メイン音量調整">
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <main id="main-content" class="is-hidden" aria-hidden="true">
+        <!-- ヘッダーヒーロー領域 -->
+        <header class="hero-section">
+            <div class="hero-content">
+                <div class="hero-tag">TRPGオンライン交流イベント</div>
+                <h1 class="hero-title">
+                    <span class="title-main">卓フェス2026</span>
+                    <span class="title-sub">～サマーシーズン～</span>
+                </h1>
+                <p class="hero-lead">この夏、TRPGを遊びつくそう！</p>
+                <p class="hero-description">
+                    TRPGプレイヤーが集まって、卓も雑談もゲームも全部楽しむオンラインイベントです。
+                </p>
+                <div class="hero-info">
+                    <span class="info-label">開催期間</span>
+                    <span class="info-value">2026年7月中旬 ～ 8月末 予定</span>
+                </div>
+            </div>
+            
+            <!-- 下スクロールを促す矢印 -->
+            <div class="scroll-down-indicator" aria-hidden="true">
+                <span>SCROLL</span>
+                <div class="arrow"></div>
+            </div>
+        </header>
+
+        <!-- 企画概要セクション -->
+        <section id="about" class="section section-about">
+            <div class="container">
+                <h2 class="section-title">卓フェスとは？</h2>
+                <div class="about-card">
+                    <p class="about-text">
+                        卓フェスは、TRPGプレイヤーが集まって、卓も雑談もゲームも全部楽しむオンラインイベントです。
+                    </p>
+                    <p class="about-text highlight">
+                        卓に参加するもよし。<br>
+                        GMするもよし。<br>
+                        語り合うもよし。<br>
+                        色んなゲームで遊ぶもよし。
+                    </p>
+                    <p class="about-text">
+                        今回は「サマーシーズン」として、夏祭りみたいに、みんなでワイワイ楽しめる場所を目指しています。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 卓フェスでできることセクション -->
+        <section id="features" class="section section-features">
+            <div class="container">
+                <h2 class="section-title">卓フェスでできること</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon" aria-hidden="true">🎲</div>
+                        <h3>卓に参加する</h3>
+                        <p>様々なシステム、様々なGMによるセッションへ気軽に参加して、新しい物語を紡ぎましょう。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon" aria-hidden="true">📖</div>
+                        <h3>GMとして卓を立てる</h3>
+                        <p>あなたのやりたいシステム、シナリオでプレイヤーを募集！ 自由な発想で卓を発信できます。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon" aria-hidden="true">💬</div>
+                        <h3>好きなTRPGシステムを語る</h3>
+                        <p>マイナーシステムから定番システムまで、熱い思いを共有できる仲間が見つかります。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon" aria-hidden="true">✨</div>
+                        <h3>初めてのシステムに触れる</h3>
+                        <p>ルールブックを持っていなくても、初心者歓迎卓や体験会を通じて新しい出会いがあります。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon" aria-hidden="true">🤝</div>
+                        <h3>セッション後の感想を共有</h3>
+                        <p>楽しかった思い出や自慢のエピソード、イラストなどを共有してみんなで盛り上がりましょう。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon" aria-hidden="true">🏮</div>
+                        <h3>雑談でワイワイする</h3>
+                        <p>ボイスチャンネルやテキストチャンネルで、日々のごはんの話から創作の相談まで、夏祭りのようにワイワイ話そう。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon" aria-hidden="true">🎮</div>
+                        <h3>TRPG以外のゲームで遊ぶ</h3>
+                        <p>ボードゲームや気軽な多人数ゲームなど、TRPGの合間にみんなで遊べる部屋も用意しています。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon" aria-hidden="true">🎧</div>
+                        <h3>作業通話でゆるく集まる</h3>
+                        <p>シナリオ執筆、キャラクター制作、読書、事務作業など、それぞれの作業をしながらまったり過ごせます。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon" aria-hidden="true">🌊</div>
+                        <h3>新しい仲間と出会う</h3>
+                        <p>この夏の交流をきっかけに、これから先も一緒に遊び続けられる大切な友達を見つけてください。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 参加前のルールセクション -->
+        <section id="rules" class="section section-rules">
+            <div class="container md-narrow">
+                <h2 class="section-title">参加前に確認してほしいこと</h2>
+                <div class="rules-card">
+                    <p class="rules-lead">みんなが安心して最高に楽しめる夏にするために、以下のルールの遵守をお願いいたします。</p>
+                    
+                    <ul class="rules-list">
+                        <li>
+                            <span class="rule-num">1</span>
+                            <span class="rule-desc">他の参加者への攻撃、暴言、ハラスメントは禁止です</span>
+                        </li>
+                        <li>
+                            <span class="rule-num">2</span>
+                            <span class="rule-desc">初心者・経験者問わず、互いに尊重して遊んでください</span>
+                        </li>
+                        <li>
+                            <span class="rule-num">3</span>
+                            <span class="rule-desc">卓募集や日程調整は、各自の責任で行ってください</span>
+                        </li>
+                        <li>
+                            <span class="rule-num">4</span>
+                            <span class="rule-desc">センシティブな内容を含む卓は、募集時に必ず明記してください</span>
+                        </li>
+                        <li>
+                            <span class="rule-num">5</span>
+                            <span class="rule-desc">TRPG関連の宣伝は指定チャンネルを利用してください</span>
+                        </li>
+                        <li>
+                            <span class="rule-num">6</span>
+                            <span class="rule-desc">外部Discordサーバーの宣伝は、閉会後の指定期間のみ可能です</span>
+                        </li>
+                        <li>
+                            <span class="rule-num">7</span>
+                            <span class="rule-desc">トラブルがあった場合は、運営へ相談してください</span>
+                        </li>
+                        <li>
+                            <span class="rule-num">8</span>
+                            <span class="rule-desc">運営が必要と判断した場合、注意・制限・退出対応を行う場合があります</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 参加同意＆Discord誘導 -->
+                <div class="joining-pane">
+                    <div class="agree-container">
+                        <input type="checkbox" id="chk-agree" class="custom-checkbox">
+                        <label for="chk-agree" class="checkbox-label">
+                            みんなで楽しく遊ぶためのルールを確認しました
+                        </label>
+                    </div>
+
+                    <div class="discord-btn-wrapper">
+                        <!-- メモ: script.js 側で有効・無効をリアルタイムに制御します -->
+                        <a id="btn-discord" href="https://discord.gg/xxxxxx" target="_blank" rel="noopener noreferrer" class="btn btn-discord disabled" aria-disabled="true" tabindex="-1">
+                            <span class="btn-icon">
+                                <svg width="24" height="24" viewBox="0 0 127.14 96.36">
+                                    <path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.43-5c.87-.64,1.71-1.33,2.5-2a75.61,75.61,0,0,0,72.63,0c.79.71,1.63,1.4,2.5,2a68.43,68.43,0,0,1-10.43,5A77.7,77.7,0,0,0,95.11,86.36a105.73,105.73,0,0,0,31.06-18.83C129,54.65,122.94,31.58,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
+                                </svg>
+                            </span>
+                            卓フェス会場へ入る
+                        </a>
+                        <p class="btn-note">※ Discord招待リンクは定期的に更新される場合があります</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- フッター -->
+        <footer class="main-footer">
+            <div class="container">
+                <p class="copyright">&copy; 2026 卓フェス 運営チーム All Rights Reserved.</p>
+            </div>
+        </footer>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
