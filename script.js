@@ -200,6 +200,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 audioOverlay.setAttribute('aria-hidden', 'true');
             }
             
+            // 【超重要】OSのアニメーション軽減（prefers-reduced-motion）が有効なPC環境の場合、
+            // 演出用オーバーレイを一切挟まず即座にメインに遷移させる
+            if (prefersReducedMotion) {
+                console.log("Reduced motion is active. Skipping intro overlay completely.");
+                showMainContent();
+                return;
+            }
+            
             // 入室演出オーバーレイを表示し、最前面に
             if (introOverlay) {
                 introOverlay.classList.remove('is-hidden');
@@ -219,9 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (prefersReducedMotion) {
             console.log("Reduced motion preferred. Skipping animation.");
-            setTimeout(() => {
-                showMainContent();
-            }, 500);
+            showMainContent();
             return;
         }
 
